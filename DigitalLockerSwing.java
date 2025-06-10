@@ -90,14 +90,12 @@ public class DigitalLockerSwing {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            // Scale transformation
             int w = getWidth();
             int h = getHeight();
             g2.translate(w / 2, h / 2);
             g2.scale(scale, scale);
             g2.translate(-w / 2, -h / 2);
 
-            // Background with glow effect on hover
             if (isHovered) {
                 g2.setColor(new Color(255, 255, 255, 80));
                 g2.fillRoundRect(0, 0, w, h, 20, 20);
@@ -132,31 +130,115 @@ public class DigitalLockerSwing {
         }
     }
 
-    // GUI for user registration with fade-in
+    // Custom control panel for window controls
+    private JPanel createControlPanel(JFrame frame) {
+        JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 5));
+        controlPanel.setOpaque(false);
+
+        JButton minimizeButton = new JButton("–");
+        minimizeButton.setFont(new Font("Arial", Font.BOLD, 12));
+        minimizeButton.setForeground(Color.WHITE);
+        minimizeButton.setBackground(new Color(255, 165, 0)); // Yellow-orange
+        minimizeButton.setBorder(new LineBorder(new Color(100, 100, 100), 1, true));
+        minimizeButton.setPreferredSize(new Dimension(30, 20));
+        minimizeButton.addActionListener(e -> frame.setState(Frame.ICONIFIED));
+
+        JButton maximizeRestoreButton = new JButton("🗖");
+        maximizeRestoreButton.setFont(new Font("Arial", Font.BOLD, 12));
+        maximizeRestoreButton.setForeground(Color.WHITE);
+        maximizeRestoreButton.setBackground(new Color(50, 205, 50)); // Green
+        maximizeRestoreButton.setBorder(new LineBorder(new Color(100, 100, 100), 1, true));
+        maximizeRestoreButton.setPreferredSize(new Dimension(30, 20));
+        maximizeRestoreButton.addActionListener(e -> {
+            if ((frame.getExtendedState() & Frame.MAXIMIZED_BOTH) == Frame.MAXIMIZED_BOTH) {
+                frame.setExtendedState(Frame.NORMAL);
+                maximizeRestoreButton.setText("🗖");
+            } else {
+                frame.setExtendedState(Frame.MAXIMIZED_BOTH);
+                maximizeRestoreButton.setText("🗗");
+            }
+        });
+
+        JButton closeButton = new JButton("X");
+        closeButton.setFont(new Font("Arial", Font.BOLD, 12));
+        closeButton.setForeground(Color.WHITE);
+        closeButton.setBackground(new Color(255, 50, 50)); // Red
+        closeButton.setBorder(new LineBorder(new Color(100, 100, 100), 1, true));
+        closeButton.setPreferredSize(new Dimension(30, 20));
+        closeButton.addActionListener(e -> System.exit(0));
+
+        controlPanel.add(minimizeButton);
+        controlPanel.add(maximizeRestoreButton);
+        controlPanel.add(closeButton);
+        return controlPanel;
+    }
+
+    // Variables for window dragging
+    private Point initialClick;
+
+    // Method to enable window dragging
+    private void enableWindowDragging(JFrame frame, JPanel dragArea) {
+        dragArea.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                initialClick = e.getPoint();
+                frame.getComponentAt(initialClick);
+            }
+        });
+
+        dragArea.addMouseMotionListener(new MouseMotionAdapter() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                int thisX = frame.getLocation().x;
+                int thisY = frame.getLocation().y;
+
+                int xMoved = e.getX() - initialClick.x;
+                int yMoved = e.getY() - initialClick.y;
+
+                int X = thisX + xMoved;
+                int Y = thisY + yMoved;
+                frame.setLocation(X, Y);
+            }
+        });
+    }
+
     private void createRegistrationGUI() {
         JFrame regFrame = new JFrame("Digital Locker - Register");
         regFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         regFrame.setSize(400, 300);
         regFrame.setLocationRelativeTo(null);
-        regFrame.setUndecorated(true); // Remove default frame borders
-        regFrame.setOpacity(0.0f); // For fade-in effect
+        regFrame.setUndecorated(true);
+        regFrame.setOpacity(0.0f);
 
-        // Gradient background
         GradientPanel mainPanel = new GradientPanel(new Color(20, 40, 60), new Color(60, 20, 80));
-        mainPanel.setLayout(new GridBagLayout());
+        mainPanel.setLayout(new BorderLayout());
         mainPanel.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 2, true));
 
+        // Top panel for dragging and controls
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setOpaque(false);
+        topPanel.setPreferredSize(new Dimension(400, 30));
+        JLabel titleLabel = new JLabel("Digital Locker - Register", JLabel.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        titleLabel.setForeground(new Color(0, 255, 255));
+        topPanel.add(titleLabel, BorderLayout.CENTER);
+        topPanel.add(createControlPanel(regFrame), BorderLayout.EAST);
+        enableWindowDragging(regFrame, topPanel);
+        mainPanel.add(topPanel, BorderLayout.NORTH);
+
+        JPanel contentPanel = new JPanel(new GridBagLayout());
+        contentPanel.setOpaque(false);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(15, 15, 15, 15);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        JLabel titleLabel = new JLabel("Create Account", JLabel.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 26));
-        titleLabel.setForeground(new Color(0, 255, 255)); // Cyan for title
+        JLabel subtitleLabel = new JLabel("Create Account", JLabel.CENTER);
+        subtitleLabel.setFont(new Font("Arial", Font.BOLD, 26));
+        subtitleLabel.setForeground(new Color(0, 255, 255));
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 2;
-        mainPanel.add(titleLabel, gbc);
+        contentPanel.add(subtitleLabel, gbc);
 
         JLabel userLabel = new JLabel("Username:");
         userLabel.setFont(new Font("Arial", Font.PLAIN, 16));
@@ -164,7 +246,7 @@ public class DigitalLockerSwing {
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.gridwidth = 1;
-        mainPanel.add(userLabel, gbc);
+        contentPanel.add(userLabel, gbc);
 
         JTextField userField = new JTextField(15);
         userField.setFont(new Font("Arial", Font.PLAIN, 16));
@@ -173,14 +255,14 @@ public class DigitalLockerSwing {
         userField.setBorder(new LineBorder(new Color(100, 100, 100), 1, true));
         gbc.gridx = 1;
         gbc.gridy = 1;
-        mainPanel.add(userField, gbc);
+        contentPanel.add(userField, gbc);
 
         JLabel passLabel = new JLabel("Password:");
         passLabel.setFont(new Font("Arial", Font.PLAIN, 16));
         passLabel.setForeground(Color.WHITE);
         gbc.gridx = 0;
         gbc.gridy = 2;
-        mainPanel.add(passLabel, gbc);
+        contentPanel.add(passLabel, gbc);
 
         JPasswordField passField = new JPasswordField(15);
         passField.setFont(new Font("Arial", Font.PLAIN, 16));
@@ -189,14 +271,14 @@ public class DigitalLockerSwing {
         passField.setBorder(new LineBorder(new Color(100, 100, 100), 1, true));
         gbc.gridx = 1;
         gbc.gridy = 2;
-        mainPanel.add(passField, gbc);
+        contentPanel.add(passField, gbc);
 
         JLabel confirmPassLabel = new JLabel("Confirm Password:");
         confirmPassLabel.setFont(new Font("Arial", Font.PLAIN, 16));
         confirmPassLabel.setForeground(Color.WHITE);
         gbc.gridx = 0;
         gbc.gridy = 3;
-        mainPanel.add(confirmPassLabel, gbc);
+        contentPanel.add(confirmPassLabel, gbc);
 
         JPasswordField confirmPassField = new JPasswordField(15);
         confirmPassField.setFont(new Font("Arial", Font.PLAIN, 16));
@@ -205,28 +287,28 @@ public class DigitalLockerSwing {
         confirmPassField.setBorder(new LineBorder(new Color(100, 100, 100), 1, true));
         gbc.gridx = 1;
         gbc.gridy = 3;
-        mainPanel.add(confirmPassField, gbc);
+        contentPanel.add(confirmPassField, gbc);
 
         RoundedButton registerBtn = new RoundedButton("Register");
-        registerBtn.setBackground(new Color(0, 200, 200)); // Cyan
+        registerBtn.setBackground(new Color(0, 200, 200));
         gbc.gridx = 0;
         gbc.gridy = 4;
         gbc.gridwidth = 2;
         gbc.fill = GridBagConstraints.NONE;
-        mainPanel.add(registerBtn, gbc);
+        contentPanel.add(registerBtn, gbc);
 
         JButton loginLink = new JButton("Already have an account? Login");
         loginLink.setFont(new Font("Arial", Font.PLAIN, 14));
         loginLink.setBackground(new Color(0, 0, 0, 0));
-        loginLink.setForeground(new Color(255, 105, 180)); // Pink
+        loginLink.setForeground(new Color(255, 105, 180));
         loginLink.setBorderPainted(false);
         gbc.gridx = 0;
         gbc.gridy = 5;
-        mainPanel.add(loginLink, gbc);
+        contentPanel.add(loginLink, gbc);
 
+        mainPanel.add(contentPanel, BorderLayout.CENTER);
         regFrame.add(mainPanel);
 
-        // Fade-in animation
         Timer fadeTimer = new Timer();
         fadeTimer.scheduleAtFixedRate(new TimerTask() {
             float opacity = 0.0f;
@@ -293,20 +375,34 @@ public class DigitalLockerSwing {
         loginFrame.setOpacity(0.0f);
 
         GradientPanel mainPanel = new GradientPanel(new Color(20, 40, 60), new Color(60, 20, 80));
-        mainPanel.setLayout(new GridBagLayout());
+        mainPanel.setLayout(new BorderLayout());
         mainPanel.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 2, true));
 
+        // Top panel for dragging and controls
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setOpaque(false);
+        topPanel.setPreferredSize(new Dimension(400, 30));
+        JLabel titleLabel = new JLabel("Digital Locker - Login", JLabel.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        titleLabel.setForeground(new Color(0, 255, 255));
+        topPanel.add(titleLabel, BorderLayout.CENTER);
+        topPanel.add(createControlPanel(loginFrame), BorderLayout.EAST);
+        enableWindowDragging(loginFrame, topPanel);
+        mainPanel.add(topPanel, BorderLayout.NORTH);
+
+        JPanel contentPanel = new JPanel(new GridBagLayout());
+        contentPanel.setOpaque(false);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(15, 15, 15, 15);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        JLabel titleLabel = new JLabel("Login to Digital Locker", JLabel.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 26));
-        titleLabel.setForeground(new Color(0, 255, 255));
+        JLabel subtitleLabel = new JLabel("Login to Digital Locker", JLabel.CENTER);
+        subtitleLabel.setFont(new Font("Arial", Font.BOLD, 26));
+        subtitleLabel.setForeground(new Color(0, 255, 255));
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 2;
-        mainPanel.add(titleLabel, gbc);
+        contentPanel.add(subtitleLabel, gbc);
 
         JLabel userLabel = new JLabel("Username:");
         userLabel.setFont(new Font("Arial", Font.PLAIN, 16));
@@ -314,7 +410,7 @@ public class DigitalLockerSwing {
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.gridwidth = 1;
-        mainPanel.add(userLabel, gbc);
+        contentPanel.add(userLabel, gbc);
 
         JTextField userField = new JTextField(15);
         userField.setFont(new Font("Arial", Font.PLAIN, 16));
@@ -323,14 +419,14 @@ public class DigitalLockerSwing {
         userField.setBorder(new LineBorder(new Color(100, 100, 100), 1, true));
         gbc.gridx = 1;
         gbc.gridy = 1;
-        mainPanel.add(userField, gbc);
+        contentPanel.add(userField, gbc);
 
         JLabel passLabel = new JLabel("Password:");
         passLabel.setFont(new Font("Arial", Font.PLAIN, 16));
         passLabel.setForeground(Color.WHITE);
         gbc.gridx = 0;
         gbc.gridy = 2;
-        mainPanel.add(passLabel, gbc);
+        contentPanel.add(passLabel, gbc);
 
         JPasswordField passField = new JPasswordField(15);
         passField.setFont(new Font("Arial", Font.PLAIN, 16));
@@ -339,7 +435,7 @@ public class DigitalLockerSwing {
         passField.setBorder(new LineBorder(new Color(100, 100, 100), 1, true));
         gbc.gridx = 1;
         gbc.gridy = 2;
-        mainPanel.add(passField, gbc);
+        contentPanel.add(passField, gbc);
 
         RoundedButton loginBtn = new RoundedButton("Login");
         loginBtn.setBackground(new Color(0, 200, 200));
@@ -347,7 +443,7 @@ public class DigitalLockerSwing {
         gbc.gridy = 3;
         gbc.gridwidth = 2;
         gbc.fill = GridBagConstraints.NONE;
-        mainPanel.add(loginBtn, gbc);
+        contentPanel.add(loginBtn, gbc);
 
         JButton registerLink = new JButton("Need an account? Register");
         registerLink.setFont(new Font("Arial", Font.PLAIN, 14));
@@ -356,8 +452,9 @@ public class DigitalLockerSwing {
         registerLink.setBorderPainted(false);
         gbc.gridx = 0;
         gbc.gridy = 4;
-        mainPanel.add(registerLink, gbc);
+        contentPanel.add(registerLink, gbc);
 
+        mainPanel.add(contentPanel, BorderLayout.CENTER);
         loginFrame.add(mainPanel);
 
         Timer fadeTimer = new Timer();
@@ -485,7 +582,12 @@ public class DigitalLockerSwing {
         mainPanel.setLayout(new BorderLayout(15, 15));
         mainPanel.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 2, true));
 
-        // Header panel
+        // Top panel for dragging, title, and controls
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setOpaque(false);
+        topPanel.setPreferredSize(new Dimension(800, 50));
+
+        // Title and user info
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setOpaque(false);
         headerPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
@@ -493,7 +595,11 @@ public class DigitalLockerSwing {
         headerLabel.setFont(new Font("Arial", Font.BOLD, 20));
         headerLabel.setForeground(new Color(0, 255, 255));
         headerPanel.add(headerLabel, BorderLayout.WEST);
-        mainPanel.add(headerPanel, BorderLayout.NORTH);
+
+        topPanel.add(headerPanel, BorderLayout.CENTER);
+        topPanel.add(createControlPanel(frame), BorderLayout.EAST);
+        enableWindowDragging(frame, topPanel);
+        mainPanel.add(topPanel, BorderLayout.NORTH);
 
         // Center panel for file list and content
         fileListModel = new DefaultListModel<>();
@@ -549,12 +655,12 @@ public class DigitalLockerSwing {
         RoundedButton refreshBtn = new RoundedButton("🔄 Refresh List");
         RoundedButton logoutBtn = new RoundedButton("🚪 Logout");
 
-        uploadBtn.setBackground(new Color(0, 200, 200)); // Cyan
+        uploadBtn.setBackground(new Color(0, 200, 200));
         saveBtn.setBackground(new Color(0, 200, 200));
-        loadBtn.setBackground(new Color(255, 105, 180)); // Pink
-        deleteBtn.setBackground(new Color(255, 50, 50)); // Red
-        refreshBtn.setBackground(new Color(108, 117, 125)); // Gray
-        logoutBtn.setBackground(new Color(255, 165, 0)); // Orange
+        loadBtn.setBackground(new Color(255, 105, 180));
+        deleteBtn.setBackground(new Color(255, 50, 50));
+        refreshBtn.setBackground(new Color(108, 117, 125));
+        logoutBtn.setBackground(new Color(255, 165, 0));
 
         buttonPanel.add(uploadBtn);
         buttonPanel.add(saveBtn);
@@ -565,9 +671,6 @@ public class DigitalLockerSwing {
 
         bottomPanel.add(filenamePanel, BorderLayout.NORTH);
         bottomPanel.add(buttonPanel, BorderLayout.CENTER);
-
-        fileChooser = new JFileChooser();
-        fileChooser.setMultiSelectionEnabled(true);
 
         mainPanel.add(bottomPanel, BorderLayout.SOUTH);
         frame.add(mainPanel);
